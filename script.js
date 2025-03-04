@@ -34,7 +34,14 @@ const tooltip = d3.select("body").append("div")
     .style("opacity", 0);
 
 // Fetch and process world map data
-fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json")
+d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json")
+  .then(function (topology) {
+    console.log("Successfully loaded TopoJSON:", topology);
+    // Process your TopoJSON data here...
+  })
+  .catch(function (error) {
+    console.error("Error loading TopoJSON:", error);
+  });
     .then(response => response.json())
     .then(worldData => {
         console.log("Map data loaded successfully:", worldData);
