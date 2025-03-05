@@ -2,22 +2,23 @@ const vrAdoptionData = [
   // North America
   {
     country: "United States",
-    countryCode: "US",
+    countryCode: "USA",  // Changed from "US"
     adoptionRate: 65,
     details: "Major medical schools have integrated VR, with surgical training being the most common application."
   },
   {
     country: "Canada",
-    countryCode: "CA",
+    countryCode: "CAN",  // Changed from "CA"
     adoptionRate: 59,
     details: "Strong adoption in teaching hospitals with government-supported initiatives for rural healthcare training."
   },
   {
     country: "Mexico",
-    countryCode: "MX",
+    countryCode: "MEX",  // Changed from "MX"
     adoptionRate: 32,
     details: "Growing adoption in major cities, with limited access in rural areas."
   },
+  // Continue updating all other codes
 
   // Europe
   {
