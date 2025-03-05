@@ -1,38 +1,87 @@
-// This file maps various country codes and names to our standardized format
-// It helps resolve discrepancies between different GeoJSON sources and our data
-
+// Country Code Mapping for Standardization
 const countryCodeMap = {
-    // Official ISO -> Our data code
+    // Standard ISO 3166-1 alpha-3 codes
     "USA": "USA",
+    "CAN": "CAN",
+    "MEX": "MEX",
+    "BRA": "BRA",
+    "ARG": "ARG",
+    "COL": "COL",
     "GBR": "GBR",
     "DEU": "DEU",
-    // Sometimes GeoJSON uses these variants
-    "US": "USA",
-    "UK": "GBR",
+    "FRA": "FRA",
+    "NLD": "NLD",
+    "CHE": "CHE",
+    "JPN": "JPN",
+    "KOR": "KOR",
+    "CHN": "CHN",
+    "IND": "IND",
+    "SGP": "SGP",
+    "SAU": "SAU",
+    "ARE": "ARE",
+    "ISR": "ISR",
+    "ZAF": "ZAF",
+    "KEN": "KEN",
+    "EGY": "EGY",
+    "AUS": "AUS",
+    "NZL": "NZL",
+
+    // Alternative country names used in GeoJSON
     "United States": "USA",
     "United States of America": "USA",
+    "Canada": "CAN",
+    "Mexico": "MEX",
+    "Brazil": "BRA",
+    "Argentina": "ARG",
+    "Colombia": "COL",
     "United Kingdom": "GBR",
     "Britain": "GBR",
     "Germany": "DEU",
-    // Add more mappings as needed based on console output
+    "France": "FRA",
+    "Netherlands": "NLD",
+    "Switzerland": "CHE",
+    "Japan": "JPN",
+    "South Korea": "KOR",
+    "China": "CHN",
+    "India": "IND",
+    "Singapore": "SGP",
+    "Saudi Arabia": "SAU",
+    "UAE": "ARE",
+    "United Arab Emirates": "ARE",
+    "Israel": "ISR",
+    "South Africa": "ZAF",
+    "Kenya": "KEN",
+    "Egypt": "EGY",
+    "Australia": "AUS",
+    "New Zealand": "NZL",
+
+    // Additional common variants used in GeoJSON data
+    "UK": "GBR",
+    "U.S.": "USA",
+    "U.S.A.": "USA",
+    "Deutschland": "DEU",
+    "Suomi": "FIN",
+    "España": "ESP",
+    "Italia": "ITA",
+    "Brasil": "BRA"
 };
 
-// Function to normalize a country code from various possible formats
+// Function to normalize country codes from GeoJSON data
 function normalizeCountryCode(code, name) {
     if (vrAdoptionData[code]) {
-        return code; // Direct match in our data
+        return code; // Direct match in VR adoption dataset
     }
-    
-    // Check if we have a mapping
+
+    // Check if the code is mapped
     if (countryCodeMap[code]) {
         return countryCodeMap[code];
     }
-    
-    // Try to match by name if code fails
+
+    // Check if the name is mapped
     if (name && countryCodeMap[name]) {
         return countryCodeMap[name];
     }
-    
-    // Return the original code if no mapping found
+
+    // Return the original code if no mapping is found
     return code;
 }
