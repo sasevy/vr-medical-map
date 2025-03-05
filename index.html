@@ -3,44 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>World Map</title>
+    <title>World Map with D3.js</title>
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="https://unpkg.com/topojson-client@3"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        svg {
+            display: block;
+        }
+    </style>
 </head>
 <body>
-    <script>
-        // Load the correct TopoJSON file
-        d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json").then(function (topology) {
-            console.log("Successfully loaded TopoJSON:", topology);
-
-            // Convert TopoJSON to GeoJSON
-            let countries = topojson.feature(topology, topology.objects.countries);
-
-            // Set up the projection and path generator
-            let projection = d3.geoNaturalEarth1()
-                               .scale(150)
-                               .translate([window.innerWidth / 2, window.innerHeight / 2]);
-
-            let path = d3.geoPath().projection(projection);
-
-            // Create the SVG element
-            let svg = d3.select("body")
-                        .append("svg")
-                        .attr("width", window.innerWidth)
-                        .attr("height", window.innerHeight);
-
-            // Draw the map
-            svg.append("g")
-               .selectAll("path")
-               .data(countries.features)
-               .enter().append("path")
-               .attr("d", path)
-               .attr("fill", "lightgray")
-               .attr("stroke", "black");
-
-        }).catch(function (error) {
-            console.error("Error loading TopoJSON:", error);
-        });
-    </script>
+    <script src="map.js"></script>
 </body>
 </html>
