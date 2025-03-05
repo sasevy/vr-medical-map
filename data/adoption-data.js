@@ -1,4 +1,27 @@
 const vrAdoptionData = [
+  document.addEventListener('DOMContentLoaded', function() {
+    // Country code conversion map (ISO2 to ISO3)
+    const iso2ToIso3 = {
+        "US": "USA", "GB": "GBR", "CA": "CAN", "DE": "DEU", 
+        "FR": "FRA", "JP": "JPN", "CN": "CHN", "IN": "IND",
+        "RU": "RUS", "AU": "AUS", "IT": "ITA", "ES": "ESP",
+        "BR": "BRA", "KR": "KOR", "ZA": "ZAF", "MX": "MEX",
+        "ID": "IDN", "SA": "SAU", "TR": "TUR", "AR": "ARG",
+        "NL": "NLD", "CH": "CHE", "SE": "SWE", "PL": "POL",
+        "BE": "BEL", "NO": "NOR", "AT": "AUT", "IL": "ISR",
+        "DK": "DNK", "FI": "FIN", "SG": "SGP", "NZ": "NZL",
+        "MY": "MYS", "TH": "THA", "EG": "EGY", "NG": "NGA",
+        "AE": "ARE", "KE": "KEN", "GH": "GHA", "ET": "ETH",
+        "VN": "VNM", "BD": "BGD", "PK": "PAK", "CO": "COL",
+        "CL": "CHL"
+    };
+    
+    // Convert any ISO2 codes to ISO3
+    vrAdoptionData.forEach(country => {
+        if (country.countryCode.length === 2 && iso2ToIso3[country.countryCode]) {
+            country.countryCode = iso2ToIso3[country.countryCode];
+        }
+    });
   // North America
   {
     country: "United States",
