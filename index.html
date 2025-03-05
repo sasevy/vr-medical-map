@@ -3,43 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global VR Medical Training Adoption Map</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <title>Global VR Medical Training Adoption</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <link rel="stylesheet" href="css/styles.css">
-    <!-- Load the Leaflet JS after the CSS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 </head>
 <body>
     <div class="container">
         <h1>Global VR Medical Training Adoption</h1>
-        <p class="description">Explore VR medical training adoption rates around the world. Countries are colored based on their level of VR integration in medical education and training. Hover over countries to see specific adoption rates and initiatives.</p>
-        
         <div class="map-container">
             <div id="map"></div>
             <div class="legend">
                 <h4>Adoption Rate (%)</h4>
-                <div><span class="color-box" style="background-color: #edf8e9;"></span> 0-20%</div>
-                <div><span class="color-box" style="background-color: #bae4b3;"></span> 21-40%</div>
-                <div><span class="color-box" style="background-color: #74c476;"></span> 41-60%</div>
-                <div><span class="color-box" style="background-color: #31a354;"></span> 61-80%</div>
-                <div><span class="color-box" style="background-color: #006d2c;"></span> 81-100%</div>
-                <div><span class="color-box special"></span> Featured Initiative</div>
+                <div class="legend-colors">
+                    <div>
+                        <span class="color-box" style="background-color: #edf8fb;"></span>
+                        <span>0-5%</span>
+                    </div>
+                    <div>
+                        <span class="color-box" style="background-color: #b2e2e2;"></span>
+                        <span>6-20%</span>
+                    </div>
+                    <div>
+                        <span class="color-box" style="background-color: #66c2a4;"></span>
+                        <span>21-40%</span>
+                    </div>
+                    <div>
+                        <span class="color-box" style="background-color: #2ca25f;"></span>
+                        <span>41-60%</span>
+                    </div>
+                    <div>
+                        <span class="color-box" style="background-color: #006d2c;"></span>
+                        <span>61-100%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="info-box">
+                <h3>Country Information</h3>
+                <div id="country-info">
+                    <p>Hover over a country to see details</p>
+                </div>
             </div>
         </div>
-        
-        <div class="highlight-box">
-            <h3>Spotlight: Kenya-Meta Partnership</h3>
-            <p>Kenya's Ministry of Health collaborated with Meta to bring low-cost VR labs to rural clinics, demonstrating how public-private partnerships can bridge the digital divide in medical training.</p>
-        </div>
-        
-        <div class="source-note">
-            <p>Data based on 2024 estimates from studies cited in "When Virtual Reality Meets Medicine: Navigating the Ethical Maze."</p>
-            <p>Created for educational purposes to illustrate the global disparities in VR medical training access.</p>
+        <div class="notes">
+            <h3>About this Map</h3>
+            <p>This map visualizes the adoption of Virtual Reality (VR) in medical training programs worldwide as of 2024. The data highlights the significant digital divide in access to this transformative technology.</p>
+            <p>Notable initiatives include Kenya's partnership with Meta to bring VR labs to rural clinics, and similar programs emerging in Southeast Asia.</p>
+            <p><strong>Data sources:</strong> Compiled from various academic studies, industry reports, and healthcare technology surveys. The adoption rate represents the percentage of medical institutions that have integrated VR into their training curricula.</p>
         </div>
     </div>
 
-    <!-- Load our data and map script -->
-    <script src="data/adoption-data.js"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-choropleth@1.1.4/dist/choropleth.js"></script>
+    <script src="js/data.js"></script>
     <script src="js/map.js"></script>
 </body>
 </html>
