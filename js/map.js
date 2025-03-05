@@ -9,11 +9,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }).addTo(map);
     
     // Define color scale function
-    function getColor(rate) {
-        return rate > 80 ? '#006d2c' :
-               rate > 60 ? '#31a354' :
-               rate > 40 ? '#74c476' :
-               rate > 20 ? '#bae4b3' :
+    function getColor(adoptionrate) {
+        return adoptionrate > 80 ? '#006d2c' :
+               adoptionrate > 60 ? '#31a354' :
+               adoptionrate > 40 ? '#74c476' :
+               adoptionrate > 20 ? '#bae4b3' :
                           '#edf8e9';
     }
     
