@@ -3,23 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VR Adoption World Map</title>
+    <title>World Map</title>
     <script src="https://d3js.org/d3.v6.min.js"></script>
-    <script src="https://unpkg.com/topojson@3"></script>
-    <style>
-        .tooltip {
-            position: absolute;
-            background: white;
-            padding: 5px;
-            border-radius: 5px;
-            box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s;
-        }
-    </style>
+    <script src="https://unpkg.com/topojson-client@3"></script>
 </head>
 <body>
-    <script src="script.js"></script>
+    <script>
+        // Load the correct TopoJSON file
+        d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json").then(function (topology) {
+            console.log("Successfully loaded TopoJSON:", topology);
+
+            // Convert TopoJSON to GeoJSON
+            let countries = topojson.feature(topology, topology.objects.countries);
+
+            // Set up the projection and path generator
+            let projection = d3.geoNaturalEarth1()
+                               .scale(150)
+                               .translate([window.innerWidth / 2, window.innerHeight / 2]);
+
+            let path = d3.geoPath().projection(projection);
+
+            // Create the SVG element
+            let svg = d3.select("body")
+                        .append("svg")
+                        .attr("width", window.innerWidth)
+                        .attr("height", window.innerHeight);
+
+            // Draw the map
+            svg.append("g")
+               .selectAll("path")
+               .data(countries.features)
+               .enter().append("path")
+               .attr("d", path)
+               .attr("fill", "lightgray")
+               .attr("stroke", "black");
+
+        }).catch(function (error) {
+            console.error("Error loading TopoJSON:", error);
+        });
+    </script>
 </body>
 </html>
