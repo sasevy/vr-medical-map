@@ -1,238 +1,116 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize the map centered on a global view
-    const map = L.map('map').setView([20, 0], 2);
+// Initialize the map centered on (0, 0) with zoom level 2
+const map = L.map('map', {
+    center: [20, 0],
+    zoom: 2,
+    minZoom: 2,
+    maxZoom: 6,
+    scrollWheelZoom: true
+});
+
+// Add a light basemap
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd'
+}).addTo(map);
+
+// Function to determine color based on adoption rate
+function getColor(rate) {
+    return rate > 60 ? '#006d2c' :
+           rate > 40 ? '#2ca25f' :
+           rate > 20 ? '#66c2a4' :
+           rate > 5 ? '#b2e2e2' :
+                      '#edf8fb';
+}
+
+// Function to style countries based on VR adoption rate
+function style(feature) {
+    const countryCode = feature.properties.iso_a3;
+    const adoptionData = vrAdoptionData[countryCode];
     
-    // Add OpenStreetMap tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19
-    }).addTo(map);
+    return {
+        fillColor: adoptionData ? getColor(adoptionData.rate) : '#f0f0f0',
+        weight: 1,
+        opacity: 1,
+        color: 'white',
+        dashArray: '3',
+        fillOpacity: 0.7
+    };
+}
+
+// Function to highlight a country on mouseover
+function highlightFeature(e) {
+    const layer = e.target;
+
+    layer.setStyle({
+        weight: 2,
+        color: '#666',
+        dashArray: '',
+        fillOpacity: 0.9
+    });
+
+    layer.bringToFront();
+    updateInfoBox(layer.feature);
+}
+
+// Function to reset highlight on mouseout
+function resetHighlight(e) {
+    geojsonLayer.resetStyle(e.target);
+    document.getElementById('country-info').innerHTML = '<p>Hover over a country to see details</p>';
+}
+
+// Function to update the info box with country data
+function updateInfoBox(feature) {
+    const countryCode = feature.properties.iso_a3;
+    const countryName = feature.properties.name;
+    const adoptionData = vrAdoptionData[countryCode];
     
-    // Define color scale function
-    function getColor(adoptionrate) {
-        return adoptionrate > 80 ? '#006d2c' :
-               adoptionrate > 60 ? '#31a354' :
-               adoptionrate > 40 ? '#74c476' :
-               adoptionrate > 20 ? '#bae4b3' :
-                          '#edf8e9';
+    let infoContent = `<p><span class="highlight">${countryName}</span></p>`;
+    
+    if (adoptionData) {
+        infoContent += `<p>VR Medical Training Adoption: <span class="highlight">${adoptionData.rate}%</span></p>`;
+        
+        // Get region for comparison
+        let region = "";
+        if (feature.properties.continent === "North America" || feature.properties.continent === "South America") {
+            region = feature.properties.continent;
+        } else {
+            region = feature.properties.continent;
+        }
+        
+        if (regionalAverages[region]) {
+            infoContent += `<p>${region} Average: ${regionalAverages[region].toFixed(1)}%</p>`;
+        }
+        
+        // Add success story if available
+        if (adoptionData.story) {
+            infoContent += `<div class="success-story">${adoptionData.story}</div>`;
+        }
+    } else {
+        infoContent += '<p>No data available</p>';
     }
     
-    // Counter to track matched countries
-    let matchedCountries = 0;
-    let totalCountriesWithData = vrAdoptionData.length;
-    
-    // Common country code mappings (in case there are mismatches)
-    const countryCodeMappings = {
-        // Common variations between ISO codes and names
-        "USA": "US", "GBR": "GB", "KOR": "KR", 
-        "CHN": "CN", "ARE": "AE", "RUS": "RU"
-    };
-    
-    // Load GeoJSON world boundaries
-    fetch('https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson')
-        .then(response => response.json())
-        .then(geoJsonData => {
-            console.log("GeoJSON loaded successfully");
-            
-            // Check the structure of the GeoJSON
-            const sampleFeature = geoJsonData.features[0];
-            console.log("Sample feature properties:", sampleFeature.properties);
-            
-            // Create a map of country names to ISO codes from the GeoJSON
-            const countryNameToCode = {};
-            geoJsonData.features.forEach(feature => {
-                if (feature.properties.name && feature.properties.iso_a3) {
-                    countryNameToCode[feature.properties.name.toUpperCase()] = feature.properties.iso_a3;
-                }
-            });
-            
-            // Debug country codes
-            console.log("Our data country codes:", vrAdoptionData.map(d => d.countryCode));
-            
-            // Enhance our data with additional code mappings
-            vrAdoptionData.forEach(country => {
-                // Keep track of the original code for debugging
-                country.originalCode = country.countryCode;
-                
-                // Try to find a matching code in our mappings
-                if (countryCodeMappings[country.countryCode]) {
-                    country.countryCode = countryCodeMappings[country.countryCode];
-                }
-                
-                // Try to find by country name if the code doesn't match
-                const upperName = country.country.toUpperCase();
-                if (countryNameToCode[upperName] && !geoJsonData.features.some(f => f.properties.iso_a3 === country.countryCode)) {
-                    console.log(`Remapping ${country.country} from ${country.countryCode} to ${countryNameToCode[upperName]}`);
-                    country.countryCode = countryNameToCode[upperName];
-                }
-            });
-            
-            // Add GeoJSON layer with styling
-            L.geoJson(geoJsonData, {
-                style: function(feature) {
-                    // Find the data for this country
-                    const countryCode = feature.properties.iso_a3;
-                    const countryData = vrAdoptionData.find(d => d.countryCode === countryCode);
-                    
-                    // Default styling
-                    const style = {
-                        weight: 1,
-                        opacity: 1,
-                        color: '#666',
-                        dashArray: '',
-                        fillOpacity: 0.7,
-                        fillColor: '#f0f0f0' // Default color for countries without data
-                    };
-                    
-                    // If we have data for this country, set the color based on adoption rate
-                    if (countryData) {
-                        style.fillColor = getColor(countryData.adoptionRate);
-                        matchedCountries++;
-                        
-                        // Add debug info for the first few matches
-                        if (matchedCountries <= 5) {
-                            console.log(`Match found: ${feature.properties.name} (${countryCode}) - Rate: ${countryData.adoptionRate}%`);
-                        }
-                    }
-                    
-                    return style;
-                },
-                onEachFeature: function(feature, layer) {
-                    // Find the data for this country
-                    const countryCode = feature.properties.iso_a3;
-                    const countryData = vrAdoptionData.find(d => d.countryCode === countryCode);
-                    
-                    if (countryData) {
-                        // Create popup content
-                        const popupContent = `
-                            <div class="custom-popup">
-                                <div class="country-name">${countryData.country}</div>
-                                <div class="adoption-rate">VR Adoption Rate: <strong>${countryData.adoptionRate}%</strong></div>
-                                <div class="details">${countryData.details}</div>
-                            </div>
-                        `;
-                        
-                        // Bind popup to layer
-                        layer.bindPopup(popupContent);
-                        
-                        // Highlight on hover
-                        layer.on({
-                            mouseover: function(e) {
-                                layer.setStyle({
-                                    weight: 2,
-                                    color: '#666',
-                                    dashArray: '',
-                                    fillOpacity: 0.9
-                                });
-                                
-                                if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
-                                    layer.bringToFront();
-                                }
-                            },
-                            mouseout: function(e) {
-                                layer.setStyle({
-                                    weight: 1,
-                                    opacity: 1,
-                                    color: '#666',
-                                    dashArray: '',
-                                    fillOpacity: 0.7
-                                });
-                            }
-                        });
-                    } else {
-                        // For countries without data, show a simple popup
-                        layer.bindPopup(`<div class="custom-popup">
-                            <div class="country-name">${feature.properties.name}</div>
-                            <div class="details">No VR adoption data available.</div>
-                        </div>`);
-                    }
-                }
-            }).addTo(map);
-            
-            // Report on our success rate
-            console.log(`Matched ${matchedCountries} countries out of ${totalCountriesWithData} in our dataset`);
-            
-            // List unmatched countries for debugging
-            const unmatchedCountries = vrAdoptionData.filter(country => 
-                !geoJsonData.features.some(feature => feature.properties.iso_a3 === country.countryCode)
-            );
-            
-            if (unmatchedCountries.length > 0) {
-                console.log("Unmatched countries:", unmatchedCountries.map(c => `${c.country} (${c.originalCode}→${c.countryCode})`));
-                
-                // Provide suggestions for fixing unmatched countries
-                unmatchedCountries.forEach(country => {
-                    // Find potential matches based on name similarity
-                    const potentialMatches = geoJsonData.features
-                        .filter(feature => {
-                            const countryName = country.country.toLowerCase();
-                            const featureName = feature.properties.name.toLowerCase();
-                            return featureName.includes(countryName) || countryName.includes(featureName);
-                        })
-                        .map(feature => ({
-                            name: feature.properties.name,
-                            code: feature.properties.iso_a3
-                        }));
-                    
-                    if (potentialMatches.length > 0) {
-                        console.log(`Suggestion for ${country.country}: Use code ${potentialMatches[0].code} (${potentialMatches[0].name})`);
-                    }
-                });
-            }
-            
-            // Add markers for featured initiatives
-            vrAdoptionData.filter(d => d.featured).forEach(country => {
-                // Find the country in the GeoJSON to get its centroid
-                const countryFeature = geoJsonData.features.find(f => f.properties.iso_a3 === country.countryCode);
-                
-                if (countryFeature) {
-                    // Calculate rough centroid
-                    let centerLat = 0, centerLon = 0, numPoints = 0;
-                    
-                    if (countryFeature.geometry.type === 'Polygon') {
-                        const coords = countryFeature.geometry.coordinates[0];
-                        coords.forEach(coord => {
-                            centerLon += coord[0];
-                            centerLat += coord[1];
-                            numPoints++;
-                        });
-                    } else if (countryFeature.geometry.type === 'MultiPolygon') {
-                        countryFeature.geometry.coordinates.forEach(polygon => {
-                            polygon[0].forEach(coord => {
-                                centerLon += coord[0];
-                                centerLat += coord[1];
-                                numPoints++;
-                            });
-                        });
-                    }
-                    
-                    if (numPoints > 0) {
-                        centerLat /= numPoints;
-                        centerLon /= numPoints;
-                        
-                        // Add marker at country centroid
-                        L.circleMarker([centerLat, centerLon], {
-                            radius: 8,
-                            fillColor: '#E74C3C',
-                            color: '#fff',
-                            weight: 2,
-                            opacity: 1,
-                            fillOpacity: 0.8
-                        }).addTo(map).bindPopup(`
-                            <div class="custom-popup">
-                                <div class="country-name">${country.country}: Featured Initiative</div>
-                                <div class="adoption-rate">VR Adoption Rate: <strong>${country.adoptionRate}%</strong></div>
-                                <div class="details">${country.details}</div>
-                            </div>
-                        `);
-                    }
-                } else {
-                    console.log(`Could not find GeoJSON feature for featured country: ${country.country}`);
-                }
-            });
-        })
-        .catch(error => {
-            console.error('Error loading GeoJSON data:', error);
-            document.getElementById('map').innerHTML = '<p class="error">Error loading map data. Please try again later.</p>';
-        });
-});
+    document.getElementById('country-info').innerHTML = infoContent;
+}
+
+// Add interaction functions to each feature
+function onEachFeature(feature, layer) {
+    layer.on({
+        mouseover: highlightFeature,
+        mouseout: resetHighlight
+    });
+}
+
+// Load GeoJSON data from natural earth dataset
+fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
+    .then(response => response.json())
+    .then(data => {
+        // Add the GeoJSON layer to the map
+        geojsonLayer = L.geoJson(data, {
+            style: style,
+            onEachFeature: onEachFeature
+        }).addTo(map);
+    })
+    .catch(error => {
+        console.error('Error loading GeoJSON data:', error);
+        document.getElementById('map').innerHTML = '<p class="error">Error loading map data. Please try again later.</p>';
+    });
