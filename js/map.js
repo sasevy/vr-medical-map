@@ -24,14 +24,14 @@ function getColor(rate) {
 
 // Function to style countries based on VR adoption rate
 function style(feature) {
-    // Check all possible ISO code properties in the GeoJSON
-    const countryCode = feature.properties.iso_a3 || feature.properties.ISO_A3 || feature.properties.ISO3 || 
-                       feature.properties.ADM0_A3 || feature.properties.ADMIN;
-    
-    // For debugging, log countries with missing data
-    if (!vrAdoptionData[countryCode]) {
-        console.log(`Missing data for country: ${feature.properties.name || feature.properties.NAME}, code: ${countryCode}`);
-    }
+    // Get all possible country identifiers
+    const rawCode = feature.properties.iso_a3 || feature.properties.ISO_A3 || 
+                   feature.properties.ISO3 || feature.properties.ADM0_A3;
+    const name = feature.properties.name || feature.properties.NAME || 
+                feature.properties.ADMIN;
+                
+    // Normalize the code
+    const countryCode = normalizeCountryCode(rawCode, name);
     
     const adoptionData = vrAdoptionData[countryCode];
     
@@ -68,29 +68,27 @@ function resetHighlight(e) {
 
 // Function to update the info box with country data
 function updateInfoBox(feature) {
-    // First, determine which property holds the country code in this GeoJSON
-    const countryCode = feature.properties.iso_a3 || feature.properties.ISO_A3 || 
-                       feature.properties.ISO3 || feature.properties.ADM0_A3;
-    
-    // Get country name from any available property
-    const countryName = feature.properties.name || feature.properties.NAME || 
-                       feature.properties.ADMIN || feature.properties.admin;
+    // Get all possible country identifiers
+    const rawCode = feature.properties.iso_a3 || feature.properties.ISO_A3 || 
+                   feature.properties.ISO3 || feature.properties.ADM0_A3;
+    const name = feature.properties.name || feature.properties.NAME || 
+                feature.properties.ADMIN;
+                
+    // Normalize the code
+    const countryCode = normalizeCountryCode(rawCode, name);
     
     const adoptionData = vrAdoptionData[countryCode];
     
-    let infoContent = `<p><span class="highlight">${countryName || 'Unknown Country'}</span>`;
-    if (countryCode) {
-        infoContent += ` (${countryCode})`;
-    }
+    let infoContent = `<p><span class="highlight">${name || 'Unknown Country'}</span>`;
     infoContent += `</p>`;
     
     if (adoptionData) {
         infoContent += `<p>VR Medical Training Adoption: <span class="highlight">${adoptionData.rate}%</span></p>`;
         
         // Get region for comparison
-        let region = "";
         const continent = feature.properties.continent || feature.properties.CONTINENT || 
                          feature.properties.REGION || feature.properties.region;
+        let region = "";
                          
         if (continent) {
             if (continent.includes("America")) {
@@ -98,10 +96,28 @@ function updateInfoBox(feature) {
             } else {
                 region = continent;
             }
+        } else {
+            // Determine region based on rough coordinates if not provided
+            const bounds = L.geoJson(feature).getBounds();
+            const center = bounds.getCenter();
             
-            if (regionalAverages[region]) {
-                infoContent += `<p>${region} Average: ${regionalAverages[region].toFixed(1)}%</p>`;
+            if (center.lat > 0 && center.lng > -20 && center.lng < 40) {
+                region = "Europe";
+            } else if (center.lat > 0 && center.lng > 40) {
+                region = "Asia";
+            } else if (center.lat < 0 && center.lng > 0) {
+                region = "Africa";
+            } else if (center.lat > 0 && center.lng < -40) {
+                region = "North America";
+            } else if (center.lat < 0 && center.lng < -40) {
+                region = "South America";
+            } else if (center.lat < 0 && center.lng > 100) {
+                region = "Oceania";
             }
+        }
+        
+        if (region && regionalAverages[region]) {
+            infoContent += `<p>${region} Average: ${regionalAverages[region].toFixed(1)}%</p>`;
         }
         
         // Add success story if available
@@ -110,14 +126,10 @@ function updateInfoBox(feature) {
         }
     } else {
         infoContent += `<p>No adoption data available for this country.</p>`;
-        
-        // For debugging - show what properties are available
-        infoContent += `<p><small>Debug: Looking for code ${countryCode}</small></p>`;
     }
     
     document.getElementById('country-info').innerHTML = infoContent;
 }
-
 // Add interaction functions to each feature
 function onEachFeature(feature, layer) {
     layer.on({
