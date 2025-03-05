@@ -17,10 +17,56 @@ document.addEventListener('DOMContentLoaded', function() {
                           '#edf8e9';
     }
     
+    // Counter to track matched countries
+    let matchedCountries = 0;
+    let totalCountriesWithData = vrAdoptionData.length;
+    
+    // Common country code mappings (in case there are mismatches)
+    const countryCodeMappings = {
+        // Common variations between ISO codes and names
+        "USA": "US", "GBR": "GB", "KOR": "KR", 
+        "CHN": "CN", "ARE": "AE", "RUS": "RU"
+    };
+    
     // Load GeoJSON world boundaries
     fetch('https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson')
         .then(response => response.json())
         .then(geoJsonData => {
+            console.log("GeoJSON loaded successfully");
+            
+            // Check the structure of the GeoJSON
+            const sampleFeature = geoJsonData.features[0];
+            console.log("Sample feature properties:", sampleFeature.properties);
+            
+            // Create a map of country names to ISO codes from the GeoJSON
+            const countryNameToCode = {};
+            geoJsonData.features.forEach(feature => {
+                if (feature.properties.name && feature.properties.iso_a3) {
+                    countryNameToCode[feature.properties.name.toUpperCase()] = feature.properties.iso_a3;
+                }
+            });
+            
+            // Debug country codes
+            console.log("Our data country codes:", vrAdoptionData.map(d => d.countryCode));
+            
+            // Enhance our data with additional code mappings
+            vrAdoptionData.forEach(country => {
+                // Keep track of the original code for debugging
+                country.originalCode = country.countryCode;
+                
+                // Try to find a matching code in our mappings
+                if (countryCodeMappings[country.countryCode]) {
+                    country.countryCode = countryCodeMappings[country.countryCode];
+                }
+                
+                // Try to find by country name if the code doesn't match
+                const upperName = country.country.toUpperCase();
+                if (countryNameToCode[upperName] && !geoJsonData.features.some(f => f.properties.iso_a3 === country.countryCode)) {
+                    console.log(`Remapping ${country.country} from ${country.countryCode} to ${countryNameToCode[upperName]}`);
+                    country.countryCode = countryNameToCode[upperName];
+                }
+            });
+            
             // Add GeoJSON layer with styling
             L.geoJson(geoJsonData, {
                 style: function(feature) {
@@ -41,6 +87,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     // If we have data for this country, set the color based on adoption rate
                     if (countryData) {
                         style.fillColor = getColor(countryData.adoptionRate);
+                        matchedCountries++;
+                        
+                        // Add debug info for the first few matches
+                        if (matchedCountries <= 5) {
+                            console.log(`Match found: ${feature.properties.name} (${countryCode}) - Rate: ${countryData.adoptionRate}%`);
+                        }
                     }
                     
                     return style;
@@ -97,6 +149,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }).addTo(map);
             
+            // Report on our success rate
+            console.log(`Matched ${matchedCountries} countries out of ${totalCountriesWithData} in our dataset`);
+            
+            // List unmatched countries for debugging
+            const unmatchedCountries = vrAdoptionData.filter(country => 
+                !geoJsonData.features.some(feature => feature.properties.iso_a3 === country.countryCode)
+            );
+            
+            if (unmatchedCountries.length > 0) {
+                console.log("Unmatched countries:", unmatchedCountries.map(c => `${c.country} (${c.originalCode}→${c.countryCode})`));
+                
+                // Provide suggestions for fixing unmatched countries
+                unmatchedCountries.forEach(country => {
+                    // Find potential matches based on name similarity
+                    const potentialMatches = geoJsonData.features
+                        .filter(feature => {
+                            const countryName = country.country.toLowerCase();
+                            const featureName = feature.properties.name.toLowerCase();
+                            return featureName.includes(countryName) || countryName.includes(featureName);
+                        })
+                        .map(feature => ({
+                            name: feature.properties.name,
+                            code: feature.properties.iso_a3
+                        }));
+                    
+                    if (potentialMatches.length > 0) {
+                        console.log(`Suggestion for ${country.country}: Use code ${potentialMatches[0].code} (${potentialMatches[0].name})`);
+                    }
+                });
+            }
+            
             // Add markers for featured initiatives
             vrAdoptionData.filter(d => d.featured).forEach(country => {
                 // Find the country in the GeoJSON to get its centroid
@@ -143,6 +226,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         `);
                     }
+                } else {
+                    console.log(`Could not find GeoJSON feature for featured country: ${country.country}`);
                 }
             });
         })
